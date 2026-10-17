@@ -35,6 +35,16 @@ export interface Match {
 }
 
 const FUZZY_MIN_LENGTH = 4;
+
+/**
+ * Starting the name beats starting a later word, but not absolutely: a
+ * word-start match competes as if it were this many times less popular. So
+ * "scarab" lists The Scarab God (#1,222) before Scarab Feast (#19,776), and
+ * "ring" lists Sol Ring before Ring of Ma'rûf. Tuned with `npm run eval`.
+ */
+export const WORD_START_PENALTY = 5;
+// Very short queries word-start-match too many names for popularity to help.
+const WORD_START_PENALTY_MIN_LENGTH = 3;
 // Typo matching only kicks in when the query found (almost) nothing: padding a
 // list of real matches with near-misses is just noise.
 const FUZZY_BELOW_RESULTS = 3;
@@ -130,7 +140,17 @@ export class SearchIndex {
       }
     }
 
-    const results = buckets.flat().slice(0, limit);
+    // Both buckets are in rank order (card index), so merging them by weighted
+    // index gives the best `limit` of the two combined.
+    const penalty = q.length >= WORD_START_PENALTY_MIN_LENGTH ? WORD_START_PENALTY : Infinity;
+    const prefix = buckets[Tier.Prefix];
+    const wordStart = buckets[Tier.WordStart];
+    const merged: Match[] = [];
+    for (let p = 0, w = 0; p < prefix.length || w < wordStart.length; ) {
+      const takePrefix = w >= wordStart.length || (p < prefix.length && prefix[p].card + 1 <= (wordStart[w].card + 1) * penalty);
+      merged.push(takePrefix ? prefix[p++] : wordStart[w++]);
+    }
+    const results = [...buckets[Tier.Exact], ...merged, ...buckets.slice(Tier.Substring).flat()].slice(0, limit);
     if (results.length < Math.min(limit, FUZZY_BELOW_RESULTS) && qc.length >= FUZZY_MIN_LENGTH) {
       // No bucket was full, so `results` holds every card that matched.
       results.push(...this.fuzzy(q, limit - results.length, new Set(results.map((m) => m.card))));

@@ -25,5 +25,8 @@
   ["snap", "Snapcaster Mage", 2],
   ["stone", "Stoneforge Mystic", 3],
   ["thought", "Thoughtseize", 3],
-  ["ragavan", "Ragavan, Nimble Pilferer", 1]
+  ["ragavan", "Ragavan, Nimble Pilferer", 1],
+  ["scarab", "The Scarab God", 1],
+  ["ring", "The One Ring", 3],
+  ["one ring", "The One Ring", 1]
 ]
