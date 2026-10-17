@@ -98,18 +98,27 @@ npm run eval       # where everyday queries land with the current data
 
 `.github/workflows/build.yml` runs on every push, on pull requests, nightly,
 and on demand. It tests, fetches fresh data and builds the app. On the default
-branch it then publishes a multi-arch `nginx:alpine` image to
-`ghcr.io/<owner>/mtg-tutor` with two tags: `:latest` and `:content-<hash>`.
-If an image with identical content already exists, nothing is pushed, so
-anything watching `:latest` only sees real changes.
+branch it then publishes the app in two ways:
 
-nginx serves the precompressed `.gz` files and sends these cache headers:
+- **GitHub Pages**, at `https://<owner>.github.io/mtg-tutor/`. This needs
+  **Settings → Pages → Source: GitHub Actions**. The app uses relative paths,
+  so the sub-path works without configuration. Pages sets its own cache
+  headers (10 minutes on everything), so a new build can take that long to
+  reach phones.
+- **A container image**: a multi-arch `nginx:alpine` image at
+  `ghcr.io/<owner>/mtg-tutor`, for self-hosting. It is tagged `:latest` and
+  `:content-<hash>`. If an image with identical content already exists,
+  nothing is pushed, so anything watching `:latest` only sees real changes.
+
+In the container, nginx serves the precompressed `.gz` files and sends these cache headers:
 
 - Hashed `assets/` and `data/` files are cached for a year as `immutable`.
 - `index.html`, `sw.js` and `version.json` are `no-cache`.
 
 TLS, hostnames and the compose/update setup live outside this repo. The
-container listens on port 80.
+container listens on port 80. The service worker and offline storage only work
+over HTTPS, so self-hosting needs a trusted certificate even on a home
+network.
 
 Things to know:
 
