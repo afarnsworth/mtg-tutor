@@ -1,4 +1,4 @@
-import { FACE_SEP, FLAG_BACK_IMAGE, type CardRecord } from './format.ts';
+import { COLOR_CATEGORIES, COLOR_SHIFT, FACE_SEP, FLAG_BACK_IMAGE, type CardRecord, type ColorCategory } from './format.ts';
 
 export interface Face {
   name: string;
@@ -19,6 +19,10 @@ export function faceOf(record: CardRecord, face: number): Face {
 
 export function hasBackImage(record: CardRecord): boolean {
   return ((record[4] ?? 0) & FLAG_BACK_IMAGE) !== 0;
+}
+
+export function colorCategory(record: CardRecord): ColorCategory {
+  return COLOR_CATEGORIES[((record[4] ?? 0) >> COLOR_SHIFT) & 15] ?? 'colorless';
 }
 
 /** Scryfall CDN image URL. Images are served unaltered. */

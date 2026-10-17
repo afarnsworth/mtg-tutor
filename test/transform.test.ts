@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { faceOf, hasBackImage, imageUrl } from '../src/card.ts';
-import { addPrinting, isIncluded, priceOf, toRecord, type PrintStats, type ScryfallCard, type ScryfallPrinting } from '../scripts/transform.ts';
+import { colorCategory as recordColor, faceOf, hasBackImage, imageUrl } from '../src/card.ts';
+import { addPrinting, colorCategory, isIncluded, priceOf, toRecord, type PrintStats, type ScryfallCard, type ScryfallPrinting } from '../scripts/transform.ts';
 
 const ID = '0dbaef61-fa39-4ea7-bc21-445401c373e7';
 const base = { id: ID, oracle_id: 'o1', set_type: 'expansion', image_status: 'highres_scan' };
@@ -15,7 +15,10 @@ describe('toRecord', () => {
       type_line: 'Artifact',
       image_uris: { large: 'https://cards.scryfall.io/large/front/x.jpg?123' },
     };
-    expect(toRecord(card)).toEqual(['Sol Ring', '{1}', 'Artifact', ID.replaceAll('-', '')]);
+    const record = toRecord(card);
+    expect(record.slice(0, 4)).toEqual(['Sol Ring', '{1}', 'Artifact', ID.replaceAll('-', '')]);
+    expect(record.length).toBe(5); // flags (color category), no image version
+    expect(hasBackImage(record)).toBe(false);
   });
 
   it('builds aligned face fields and flags a back image for DFCs', () => {
@@ -65,6 +68,39 @@ describe('toRecord', () => {
     const record = toRecord(card);
     expect(record.slice(4)).toEqual([0, '1790212038']);
     expect(imageUrl(record)).toBe(`https://cards.scryfall.io/large/front/0/d/${ID}.jpg?1790212038`);
+  });
+});
+
+describe('colorCategory', () => {
+  const c = (over: Partial<ScryfallCard>): ScryfallCard => ({ ...base, name: 'x', layout: 'normal', ...over });
+  it.each([
+    ['two colors', c({ colors: ['W', 'U'], type_line: 'Creature' }), 'gold'],
+    ['one color', c({ colors: ['G'], type_line: 'Creature' }), 'G'],
+    ['colored land (Dryad Arbor)', c({ colors: ['G'], type_line: 'Land Creature — Forest Dryad' }), 'G'],
+    ['colorless land', c({ colors: [], type_line: 'Land' }), 'land'],
+    ['artifact land', c({ colors: [], type_line: 'Artifact Land' }), 'land'],
+    ['artifact', c({ colors: [], type_line: 'Artifact — Equipment' }), 'artifact'],
+    ['colorless non-artifact', c({ colors: [], type_line: 'Creature — Eldrazi' }), 'colorless'],
+    [
+      'DFC uses the front face',
+      c({
+        layout: 'transform',
+        card_faces: [
+          { name: 'a', colors: ['U'], type_line: 'Creature' },
+          { name: 'b', colors: ['U', 'B'], type_line: 'Creature' },
+        ],
+      }),
+      'U',
+    ],
+  ])('%s', (_, card, expected) => {
+    expect(colorCategory(card)).toBe(expected);
+    // Round-trips through the record's flags without disturbing the back-image flag.
+    expect(recordColor(toRecord(card))).toBe(expected);
+  });
+
+  it('reads records without color bits as colorless', () => {
+    expect(recordColor(['x', '', '', '0'.repeat(32)])).toBe('colorless');
+    expect(recordColor(['x', '', '', '0'.repeat(32), 1])).toBe('colorless');
   });
 });
 

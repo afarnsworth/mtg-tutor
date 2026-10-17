@@ -1,8 +1,9 @@
 // Turns Scryfall card objects into compact records. Kept free of I/O so it can be tested.
-import { FACE_SEP, FLAG_BACK_IMAGE, type CardRecord } from '../src/format.ts';
+import { COLOR_CATEGORIES, COLOR_SHIFT, FACE_SEP, FLAG_BACK_IMAGE, type CardRecord, type ColorCategory } from '../src/format.ts';
 
 export interface ScryfallFace {
   name: string;
+  colors?: string[];
   mana_cost?: string;
   type_line?: string;
   image_uris?: Record<string, string>;
@@ -14,6 +15,7 @@ export interface ScryfallCard {
   name: string;
   layout: string;
   set_type: string;
+  colors?: string[];
   mana_cost?: string;
   type_line?: string;
   edhrec_rank?: number | null;
@@ -41,7 +43,9 @@ export function toRecord(card: ScryfallCard): CardRecord {
   const type = faces ? faces.map((f) => f.type_line ?? '').join(FACE_SEP) : (card.type_line ?? '');
   const record: CardRecord = [card.name, mana, type, card.id.replaceAll('-', '')];
 
-  const flags = !card.image_uris && faces?.[1]?.image_uris ? FLAG_BACK_IMAGE : 0;
+  const flags =
+    (!card.image_uris && faces?.[1]?.image_uris ? FLAG_BACK_IMAGE : 0) |
+    (COLOR_CATEGORIES.indexOf(colorCategory(card)) << COLOR_SHIFT);
   let imageVersion = '';
   if (card.image_status !== 'highres_scan') {
     const url = card.image_uris?.large ?? faces?.[0]?.image_uris?.large ?? '';
@@ -50,6 +54,21 @@ export function toRecord(card: ScryfallCard): CardRecord {
   if (flags || imageVersion) record.push(flags);
   if (imageVersion) record.push(imageVersion);
   return record;
+}
+
+/**
+ * Color, then land, then artifact. Uses the card's colors (front face for
+ * DFCs), not its color identity, so a colored land like Dryad Arbor is green.
+ */
+export function colorCategory(card: ScryfallCard): ColorCategory {
+  const front = card.card_faces?.[0];
+  const colors = card.colors ?? front?.colors ?? [];
+  if (colors.length >= 2) return 'gold';
+  if (colors.length === 1) return colors[0] as ColorCategory;
+  const type = front?.type_line ?? card.type_line ?? '';
+  if (type.includes('Land')) return 'land';
+  if (type.includes('Artifact')) return 'artifact';
+  return 'colorless';
 }
 
 /** One printing from Scryfall's Default Cards bulk file (fields we use). */
