@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "description": "Fast, offline Magic: The Gathering card lookup PWA",
+  "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=22.18"

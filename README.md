@@ -92,6 +92,12 @@ Things to know:
 - nginx's official image has no brotli module, so it serves gzip. A CDN or
   proxy in front can re-compress with brotli.
 
+## License
+
+The code is MIT licensed (see `LICENSE`). That covers this repository's code
+only: card data, card images and mana symbols belong to their owners and are
+fetched from Scryfall at build or view time, not distributed here.
+
 ## Credits
 
 Card data and images are provided by [Scryfall](https://scryfall.com). This app
