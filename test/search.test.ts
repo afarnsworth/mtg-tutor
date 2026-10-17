@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CardRecord } from '../src/format.ts';
-import { normalize, prefixDistance, SearchIndex, Tier } from '../src/search.ts';
+import { normalize, prefixDistance, SearchIndex, Tier, WORD_START_PENALTY } from '../src/search.ts';
 
 const card = (name: string): CardRecord => [name, '', '', '0'.repeat(32)];
 
@@ -35,6 +35,17 @@ describe('SearchIndex', () => {
   it('ranks exact > prefix > word start > substring, ties by rank', () => {
     expect(names('bolt')).toEqual(['Bolt', 'Boltwave', 'Bolt Bend', 'Lightning Bolt', 'Thunderbolt']);
     expect(names('bol')).toEqual(['Boltwave', 'Bolt', 'Bolt Bend', 'Lightning Bolt', 'Thunderbolt']);
+  });
+
+  it('lets a much more popular word-start match beat a start-of-name match', () => {
+    const filler = Array.from({ length: WORD_START_PENALTY * 2 }, (_, i) => card(`Filler ${i}`));
+    const popular = [card('The Scarab God'), ...filler, card('Scarab Feast')];
+    const close = [card('Filler'), card('Filler Two'), card('The Scarab God'), card('Scarab Feast')];
+    const top = (list: CardRecord[], q: string) => list[new SearchIndex(list).search(q)[0].card][0];
+    expect(top(popular, 'scarab')).toBe('The Scarab God');
+    expect(top(close, 'scarab')).toBe('Scarab Feast');
+    // Queries shorter than 3 characters keep strict tiers.
+    expect(top(popular, 'sc')).toBe('Scarab Feast');
   });
 
   it('ignores case, diacritics and punctuation', () => {

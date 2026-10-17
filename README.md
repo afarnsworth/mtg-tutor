@@ -55,12 +55,14 @@ Each face of a multi-face card is indexed on its own. Matches are ranked in
 this order:
 
 1. exact
-2. prefix
-3. word start
-4. substring
-5. all words in any order (`jace mind`)
+2. prefix or word start
+3. substring
+4. all words in any order (`jace mind`)
 
-Ties within a tier go to the more popular card. If a query finds
+Ties within a tier go to the more popular card. In tier 2, starting the name
+counts for more than starting a later word: a word-start match has to be 5×
+more popular to come first. That way `scarab` finds *The Scarab God* before
+*Scarab Feast*. Queries under 3 characters list start-of-name matches first. If a query finds
 fewer than three cards, a typo-tolerant pass is added: edit distance against
 name prefixes, with a bitmask prefilter. A keystroke takes a few milliseconds.
 
