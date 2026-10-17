@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Fast, offline Magic: The Gathering card lookup" />
+    <meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#17171c" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-title" content="Tutor" />
+    <title>MTG Tutor</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <header>
+      <input
+        id="q"
+        type="search"
+        placeholder="Search cards"
+        aria-label="Card name"
+        role="combobox"
+        aria-controls="results"
+        aria-expanded="false"
+        aria-autocomplete="list"
+        enterkeyhint="search"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        autofocus
+      />
+    </header>
+    <main>
+      <p id="status" role="status">Loading cards…</p>
+      <ol id="results" role="listbox" aria-label="Matching cards"></ol>
+      <button id="update" type="button" hidden>App updated. Tap to reload.</button>
+      <footer>
+        <p>
+          Card data and images from <a href="https://scryfall.com" target="_blank" rel="noopener">Scryfall</a>.
+        </p>
+        <p>
+          MTG Tutor is unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by
+          Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC.
+        </p>
+      </footer>
+    </main>
+    <dialog id="card" aria-label="Card image">
+      <div class="frame">
+        <img id="card-img" alt="" width="672" height="936" crossorigin="anonymous" decoding="async" />
+        <p id="card-msg" hidden>Image unavailable. It loads once you're online.</p>
+      </div>
+      <form method="dialog" class="actions">
+        <button id="card-flip" type="button" hidden>Flip</button>
+        <a id="card-link" target="_blank" rel="noopener">View on Scryfall</a>
+        <button value="close" autofocus>Close</button>
+      </form>
+    </dialog>
+  </body>
+</html>

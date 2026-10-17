@@ -1,0 +1,259 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f6f5f2;
+  --fg: #1b1b1f;
+  --muted: #6b6a70;
+  --line: #e2e0da;
+  --hover: #ebe9e3;
+  --field: #ffffff;
+  --accent: #6c4bd8;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17171c;
+    --fg: #ececf0;
+    --muted: #9796a0;
+    --line: #2a2a31;
+    --hover: #24242b;
+    --field: #22222a;
+    --accent: #a48cff;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  min-height: 100dvh;
+}
+
+.sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 12px
+    max(16px, env(safe-area-inset-left));
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+#q {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: 18px; /* >= 16px stops iOS zooming on focus */
+  color: var(--fg);
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  outline: none;
+}
+
+#q:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 max(16px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(16px, env(safe-area-inset-left));
+}
+
+#status {
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+#status:empty {
+  display: none;
+}
+
+#results {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+}
+
+#results li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    'name mana'
+    'type type';
+  gap: 2px 12px;
+  padding: 10px 12px;
+  margin: 0 -12px;
+  border-radius: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#results li:hover,
+#results li[aria-selected] {
+  background: var(--hover);
+}
+
+.name {
+  grid-area: name;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.type {
+  grid-area: type;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.mana {
+  grid-area: mana;
+  white-space: nowrap;
+  align-self: center;
+}
+
+.ms {
+  width: 1.05em;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  border-radius: 50%;
+  box-shadow: -1px 1px 0 rgb(0 0 0 / 0.8);
+}
+
+.ms-text {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.sep {
+  margin: 0 4px;
+  color: var(--muted);
+}
+
+#update {
+  display: block;
+  width: 100%;
+  margin: 12px 0;
+  padding: 10px;
+  font: inherit;
+  color: var(--bg);
+  background: var(--accent);
+  border: 0;
+  border-radius: 8px;
+}
+
+#update[hidden] {
+  display: none;
+}
+
+footer {
+  margin: 32px 0 24px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+footer a,
+dialog a {
+  color: inherit;
+}
+
+/* Card dialog */
+
+dialog {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  margin: 0;
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  border: 0;
+  color: #fff;
+  background: transparent;
+}
+
+dialog[open] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.85);
+}
+
+.frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  max-width: 100%;
+}
+
+/* Scale the whole card to fit the screen; never crop it. */
+#card-img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(100%, 672px);
+  max-height: calc(100dvh - 96px);
+  aspect-ratio: 672 / 936;
+  background: rgb(255 255 255 / 0.06);
+  transition: opacity 0.15s;
+}
+
+#card-img.loading {
+  opacity: 0.4;
+}
+
+#card-img[hidden] {
+  display: none;
+}
+
+#card-msg {
+  margin: 0;
+  padding: 24px;
+  text-align: center;
+  color: #ccc;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 15px;
+}
+
+.actions button {
+  padding: 8px 16px;
+  font: inherit;
+  color: #fff;
+  background: rgb(255 255 255 / 0.14);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.actions button[hidden] {
+  display: none;
+}

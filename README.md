@@ -1,0 +1,104 @@
+# mtg-tutor
+
+A small PWA for fast, offline Magic: The Gathering card lookup. Type part of a
+card name and get matches as you type, ranked by relevance and popularity. Tap
+a card to see its image.
+
+After the first visit it works with no network at all. Card images are cached
+as you view them.
+
+## How it works
+
+**Data.** `npm run data` downloads Scryfall's
+[Oracle Cards](https://scryfall.com/docs/api/bulk-data) bulk file (one object
+per card, found through the bulk-data API) and writes:
+
+- `public/data/cards.<hash>.json`: one compact record per card,
+  `[name, mana_cost, type_line, scryfall_id, flags?, image_version?]`, sorted
+  by EDHREC rank with unranked cards last. Rank order is implicit, so the rank
+  itself isn't stored. See `src/format.ts` for the details.
+- `public/version.json`: a small manifest pointing at the current data file.
+- `src/generated/symbols.svg`: an SVG sprite of every mana symbol, built from
+  Scryfall's `/symbology` endpoint and bundled into the app.
+
+Tokens, emblems, art cards and other memorabilia are left out (about 3,700 of
+about 38,700 objects). The result is about 3.1 MB raw, 1.2 MB gzip, or 970 KB
+brotli. Most of the compressed size is the Scryfall ids, which are random and
+don't compress.
+
+**Search** runs in memory over every card. Names are normalized: lowercased,
+with diacritics and punctuation removed, so `lim duls` finds *Lim-Dûl's Vault*.
+Each face of a multi-face card is indexed on its own. Matches are ranked in
+this order:
+
+1. exact
+2. prefix
+3. word start
+4. substring
+5. all words in any order (`jace mind`)
+
+Ties within a tier go to the card with the better EDHREC rank. If a query finds
+fewer than three cards, a typo-tolerant pass is added: edit distance against
+name prefixes, with a bitmask prefilter. A keystroke takes a few milliseconds.
+
+**Offline.** The service worker (`src/sw.js`) precaches the app shell. The app
+stores the data file in Cache Storage itself, so the first visit is enough to
+work offline. On launch the app shows the cached data immediately, then checks
+`version.json` and swaps in new data if the hash changed. Card images come
+unaltered from Scryfall's CDN (`large` size) and the service worker caches them,
+evicting the oldest past 500 images (about 70 MB). The app asks for persistent
+storage so the browser is less likely to evict any of this.
+
+## Development
+
+Requires Node 22.18+ (the scripts are TypeScript run directly by Node).
+
+```sh
+npm ci
+npm run data       # fetch card data and symbols (needed before dev/build)
+npm run dev        # dev server (service worker disabled)
+npm test
+npm run typecheck
+npm run build      # dist/: app, sw.js, precompressed .gz files
+```
+
+`npm run data -- --input oracle-cards.jsonl.gz` uses a local copy of the bulk
+file instead of downloading it.
+
+## Deployment
+
+`.github/workflows/build.yml` runs on every push, on pull requests, nightly,
+and on demand. It tests, fetches fresh data and builds the app. On the default
+branch it then publishes a multi-arch `nginx:alpine` image to
+`ghcr.io/<owner>/mtg-tutor` with two tags: `:latest` and `:content-<hash>`.
+If an image with identical content already exists, nothing is pushed, so
+anything watching `:latest` only sees real changes.
+
+nginx serves the precompressed `.gz` files and sends these cache headers:
+
+- Hashed `assets/` and `data/` files are cached for a year as `immutable`.
+- `index.html`, `sw.js` and `version.json` are `no-cache`.
+
+TLS, hostnames and the compose/update setup live outside this repo. The
+container listens on port 80.
+
+Things to know:
+
+- GHCR packages are created private. Make the package public, or give the
+  machine pulling the image credentials for ghcr.io.
+- GitHub disables scheduled workflows in public repos after 60 days without
+  repository activity. If the nightly refresh stops, re-enable it from the
+  Actions tab.
+- nginx's official image has no brotli module, so it serves gzip. A CDN or
+  proxy in front can re-compress with brotli.
+
+## Credits
+
+Card data and images are provided by [Scryfall](https://scryfall.com). This app
+downloads bulk data rather than calling the API per search, and shows images
+without modification, per Scryfall's
+[API guidelines](https://scryfall.com/docs/api).
+
+MTG Tutor is unofficial Fan Content permitted under the Fan Content Policy. Not
+approved/endorsed by Wizards. Portions of the materials used are property of
+Wizards of the Coast. ©Wizards of the Coast LLC.
