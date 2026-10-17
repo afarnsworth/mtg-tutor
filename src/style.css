@@ -167,6 +167,7 @@ main {
 
 footer {
   margin: 32px 0 24px;
+  padding-bottom: var(--fab-space, 0);
   font-size: 12px;
   color: var(--muted);
 }
@@ -174,6 +175,50 @@ footer {
 footer a,
 dialog a {
   color: inherit;
+}
+
+/* Floating search button: touch screens only, hidden while the keyboard is up. */
+
+#fab {
+  display: none;
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  width: 56px;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: var(--accent);
+  border: 0;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.3);
+  -webkit-tap-highlight-color: transparent;
+}
+
+#fab svg {
+  width: 26px;
+  height: 26px;
+}
+
+#fab svg,
+#card-search svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+@media (pointer: coarse) {
+  :root {
+    --fab-space: 72px; /* keep the footer clear of the button */
+  }
+  #fab {
+    display: flex;
+  }
+  body.keyboard #fab {
+    display: none;
+  }
 }
 
 /* Card dialog */
@@ -239,9 +284,22 @@ dialog::backdrop {
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 20px;
+  justify-content: center;
+  gap: 12px 16px;
   font-size: 15px;
+}
+
+#card-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#card-search svg {
+  width: 16px;
+  height: 16px;
 }
 
 .actions button {

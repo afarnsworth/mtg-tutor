@@ -18,6 +18,7 @@ const imgMsg = $('card-msg');
 const flipBtn = $<HTMLButtonElement>('card-flip');
 const cardLink = $<HTMLAnchorElement>('card-link');
 const updateBtn = $<HTMLButtonElement>('update');
+const fab = $<HTMLButtonElement>('fab');
 
 document.body.insertAdjacentHTML('afterbegin', sprite);
 const knownSymbols = new Set([...document.querySelectorAll('.sprite symbol')].map((s) => s.id));
@@ -148,6 +149,33 @@ window.addEventListener('popstate', () => {
 
 input.addEventListener('input', render);
 input.addEventListener('focus', () => input.select());
+
+/** Clear the box and bring up the keyboard; focus() must run inside the tap for iOS to show it. */
+function newSearch() {
+  input.value = '';
+  render();
+  window.scrollTo(0, 0);
+  input.focus();
+}
+fab.addEventListener('click', newSearch);
+$('card-search').addEventListener('click', () => {
+  dialog.close();
+  newSearch();
+});
+
+// The floating search button hides while the on-screen keyboard is up. There
+// is no keyboard API, so infer it: the box has focus and the visual viewport
+// is noticeably shorter than the page (the keyboard covers the difference).
+// Focus alone isn't enough: Android's back button hides the keyboard but
+// leaves the box focused.
+function updateKeyboard() {
+  const vv = window.visualViewport;
+  const covered = vv ? vv.height < window.innerHeight - 120 : true;
+  document.body.classList.toggle('keyboard', document.activeElement === input && covered);
+}
+input.addEventListener('focus', updateKeyboard);
+input.addEventListener('blur', updateKeyboard);
+window.visualViewport?.addEventListener('resize', updateKeyboard);
 input.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
     if (!results.length) return;
