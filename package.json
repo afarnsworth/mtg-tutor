@@ -14,7 +14,8 @@
     "build": "vite build && node scripts/postbuild.ts",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "eval": "node scripts/eval-ranking.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

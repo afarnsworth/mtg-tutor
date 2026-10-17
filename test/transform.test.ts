@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { faceOf, hasBackImage, imageUrl } from '../src/card.ts';
-import { compareCards, isIncluded, toRecord, type ScryfallCard } from '../scripts/transform.ts';
+import { addPrinting, isIncluded, priceOf, toRecord, type PrintStats, type ScryfallCard, type ScryfallPrinting } from '../scripts/transform.ts';
 
 const ID = '0dbaef61-fa39-4ea7-bc21-445401c373e7';
-const base = { id: ID, set_type: 'expansion', image_status: 'highres_scan' };
+const base = { id: ID, oracle_id: 'o1', set_type: 'expansion', image_status: 'highres_scan' };
 
 describe('toRecord', () => {
   it('encodes a normal card', () => {
@@ -68,7 +68,7 @@ describe('toRecord', () => {
   });
 });
 
-describe('filtering and sorting', () => {
+describe('filtering', () => {
   it('drops tokens, emblems, art cards and memorabilia', () => {
     const c = (layout: string, set_type = 'expansion') => ({ ...base, name: 'x', layout, set_type });
     expect(isIncluded(c('normal'))).toBe(true);
@@ -78,10 +78,59 @@ describe('filtering and sorting', () => {
     expect(isIncluded(c('art_series'))).toBe(false);
     expect(isIncluded(c('normal', 'memorabilia'))).toBe(false);
   });
+});
 
-  it('sorts by EDHREC rank with unranked cards last', () => {
-    const c = (name: string, edhrec_rank?: number | null) => ({ ...base, name, layout: 'normal', edhrec_rank });
-    const sorted = [c('B', null), c('C', 5), c('A'), c('D', 1)].sort(compareCards).map((x) => x.name);
-    expect(sorted).toEqual(['D', 'C', 'A', 'B']);
+describe('printing stats', () => {
+  const printing = (over: Partial<ScryfallPrinting>): ScryfallPrinting => ({
+    oracle_id: 'o1',
+    set: 'lea',
+    set_type: 'core',
+    released_at: '1993-08-05',
+    games: ['paper'],
+    prices: {},
+    ...over,
+  });
+  const collect = (...printings: ScryfallPrinting[]) => {
+    const stats = new Map<string, PrintStats>();
+    printings.forEach((p) => addPrinting(stats, p));
+    return stats.get('o1');
+  };
+
+  it('counts distinct paper sets, ignoring digital and memorabilia printings', () => {
+    const s = collect(
+      printing({ set: 'lea' }),
+      printing({ set: 'lea' }),
+      printing({ set: 'm10' }),
+      printing({ set: 'ced', set_type: 'memorabilia' }),
+      printing({ set: 'ymid', games: ['arena'] }),
+    );
+    expect([...s!.sets]).toEqual(['lea', 'm10']);
+  });
+
+  it('prices regular printings, not foil or promo collectibles', () => {
+    const s = collect(
+      printing({ prices: { usd: '2.00' } }),
+      printing({ prices: { usd: '1.00', usd_foil: '900' } }),
+      printing({ promo: true, prices: { usd: '500' } }),
+    );
+    expect(priceOf(s)).toBe(2);
+  });
+
+  it('falls back to the cheapest printing when no regular printing has a price', () => {
+    const s = collect(printing({ prices: { usd_foil: '30' } }), printing({ set_type: 'memorabilia', prices: { usd: '40' } }));
+    expect(priceOf(s)).toBe(30);
+    expect(priceOf(collect(printing({ set: 'ced', set_type: 'memorabilia', prices: { usd: '1800' } })))).toBe(1800);
+    expect(priceOf(undefined)).toBe(0);
+  });
+
+  it('tracks the earliest release date across all printings, digital included', () => {
+    const s = collect(printing({ released_at: '2010-07-16' }), printing({ released_at: '2009-01-01', games: ['mtgo'] }));
+    expect(s!.firstReleased).toBe('2009-01-01');
+  });
+
+  it('finds the oracle id of reversible cards on their faces', () => {
+    const stats = new Map<string, PrintStats>();
+    addPrinting(stats, printing({ oracle_id: undefined, card_faces: [{ oracle_id: 'o2' }, { oracle_id: 'o2' }] }));
+    expect(stats.has('o2')).toBe(true);
   });
 });

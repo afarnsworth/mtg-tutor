@@ -10,13 +10,14 @@ as you view them.
 ## How it works
 
 **Data.** `npm run data` downloads Scryfall's
-[Oracle Cards](https://scryfall.com/docs/api/bulk-data) bulk file (one object
-per card, found through the bulk-data API) and writes:
+[bulk data](https://scryfall.com/docs/api/bulk-data) through its bulk-data
+API: Oracle Cards (one object per card) and Default Cards (every printing).
+It also downloads Cube Cobra's public card metadata. It then writes:
 
 - `public/data/cards.<hash>.json`: one compact record per card,
   `[name, mana_cost, type_line, scryfall_id, flags?, image_version?]`, sorted
-  by EDHREC rank with unranked cards last. Rank order is implicit, so the rank
-  itself isn't stored. See `src/format.ts` for the details.
+  by popularity (see below). Rank order is implicit, so the rank itself isn't
+  stored. See `src/format.ts` for the details.
 - `public/version.json`: a small manifest pointing at the current data file.
 - `src/generated/symbols.svg`: an SVG sprite of every mana symbol, built from
   Scryfall's `/symbology` endpoint and bundled into the app.
@@ -25,6 +26,28 @@ Tokens, emblems, art cards and other memorabilia are left out (about 3,700 of
 about 38,700 objects). The result is about 3.1 MB raw, 1.2 MB gzip, or 970 KB
 brotli. Most of the compressed size is the Scryfall ids, which are random and
 don't compress.
+
+**Popularity** is a "best of" rank: each signal ranks every card, and a
+card's rank is its best weighted rank across them. Weights and the reasons
+for them are in `scripts/ranking.ts`.
+
+| signal | source | weight |
+|---|---|---|
+| EDHREC rank | Scryfall | 1 |
+| Cube inclusion count | Cube Cobra public S3 snapshot | 1 |
+| Distinct paper sets printed in (reprints) | Scryfall Default Cards | 3 |
+| Price of the priciest regular (non-foil, non-promo) printing | Scryfall Default Cards | 3 |
+
+A weight of 3 means #100 on that list counts like #300 on EDHREC. Without it, old expensive cards (*Forcefield*) and
+starter-deck reprints (*Goblin Balloon Brigade*) crowd out better matches.
+
+Cards first printed in the last 90 days, including previewed cards not yet
+released, have no data in any source yet. They get a floor rank of 2,000,
+with ties ordered by rarity.
+
+`npm run eval` checks a list of everyday queries (`scripts/eval-queries.json`)
+against the current data and reports where the expected card lands. Use it
+when changing weights.
 
 **Search** runs in memory over every card. Names are normalized: lowercased,
 with diacritics and punctuation removed, so `lim duls` finds *Lim-Dûl's Vault*.
@@ -37,7 +60,7 @@ this order:
 4. substring
 5. all words in any order (`jace mind`)
 
-Ties within a tier go to the card with the better EDHREC rank. If a query finds
+Ties within a tier go to the more popular card. If a query finds
 fewer than three cards, a typo-tolerant pass is added: edit distance against
 name prefixes, with a bitmask prefilter. A keystroke takes a few milliseconds.
 
@@ -62,8 +85,14 @@ npm run typecheck
 npm run build      # dist/: app, sw.js, precompressed .gz files
 ```
 
-`npm run data -- --input oracle-cards.jsonl.gz` uses a local copy of the bulk
-file instead of downloading it.
+`npm run data -- --oracle <file> --printings <file> --cubes <file>` uses local
+copies of the Oracle Cards and Default Cards bulk files and Cube Cobra's
+`metadatadict.json` instead of downloading them. Each option is independent.
+If the Cube Cobra download fails, the build continues without that signal.
+
+```sh
+npm run eval       # where everyday queries land with the current data
+```
 
 ## Deployment
 
@@ -100,7 +129,9 @@ fetched from Scryfall at build or view time, not distributed here.
 
 ## Credits
 
-Card data and images are provided by [Scryfall](https://scryfall.com). This app
+Card data and images are provided by [Scryfall](https://scryfall.com). Cube
+inclusion counts come from [Cube Cobra](https://cubecobra.com)'s public data
+export. This app
 downloads bulk data rather than calling the API per search, and shows images
 without modification, per Scryfall's
 [API guidelines](https://scryfall.com/docs/api).
