@@ -19,6 +19,15 @@ export type CardRecord = [string, string, string, string, number?, string?];
 /** The second face has its own image (transform / modal DFC). */
 export const FLAG_BACK_IMAGE = 1;
 
+/**
+ * Flags bits 1-4 hold an index into COLOR_CATEGORIES, used to tint result
+ * rows. Data without these bits reads as colorless, so old and new data and
+ * clients stay compatible.
+ */
+export const COLOR_CATEGORIES = ['colorless', 'W', 'U', 'B', 'R', 'G', 'gold', 'artifact', 'land'] as const;
+export type ColorCategory = (typeof COLOR_CATEGORIES)[number];
+export const COLOR_SHIFT = 1;
+
 export const FACE_SEP = ' // ';
 
 export interface DataFile {

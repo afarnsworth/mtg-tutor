@@ -1,6 +1,6 @@
 import './style.css';
 import sprite from './generated/symbols.svg?raw';
-import { faceOf, hasBackImage, imageUrl, scryfallSearchUrl } from './card.ts';
+import { colorCategory, faceOf, hasBackImage, imageUrl, scryfallSearchUrl } from './card.ts';
 import { startData } from './data.ts';
 import { FACE_SEP, symbolId, type CardRecord } from './format.ts';
 import { SearchIndex, type Match } from './search.ts';
@@ -70,6 +70,8 @@ function render() {
       li.id = `r${i}`;
       li.setAttribute('role', 'option');
       li.dataset.i = String(i);
+      const color = colorCategory(record);
+      if (color !== 'colorless') li.dataset.color = color;
       const name = Object.assign(document.createElement('span'), { className: 'name', textContent: face.name });
       const type = Object.assign(document.createElement('span'), { className: 'type', textContent: face.type });
       if (match.face >= 0) type.textContent += ` · ${record[0]}`;

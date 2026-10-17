@@ -13,9 +13,9 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #17171c;
-    --fg: #ececf0;
-    --muted: #9796a0;
+    --bg: #1b1a1f;
+    --fg: #f0eff2;
+    --muted: #aba9b3;
     --line: #2a2a31;
     --hover: #24242b;
     --field: #22222a;
@@ -87,9 +87,13 @@ main {
   display: none;
 }
 
+/* Result rows are separate tiles, inset 6px from the screen edges (main has 16px padding). */
 #results {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   list-style: none;
-  margin: 8px 0;
+  margin: 8px -10px;
   padding: 0;
 }
 
@@ -99,10 +103,12 @@ main {
   grid-template-areas:
     'name mana'
     'type type';
+  align-content: center;
   gap: 2px 12px;
-  padding: 10px 12px;
-  margin: 0 -12px;
-  border-radius: 8px;
+  min-height: 64px;
+  padding: 8px 12px 8px 14px;
+  border-radius: 10px;
+  background: var(--tint, transparent);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
@@ -110,6 +116,30 @@ main {
 #results li:hover,
 #results li[aria-selected] {
   background: var(--hover);
+}
+
+/* Color tints are tuned for the dark theme only; light mode stays untinted for now. */
+@media (prefers-color-scheme: dark) {
+  #results li[data-color='W'] { --tint: rgb(246 241 226 / 0.17); }
+  #results li[data-color='U'] { --tint: rgb(76 147 222 / 0.18); }
+  #results li[data-color='B'] { --tint: #0f0e12; }
+  #results li[data-color='R'] { --tint: rgb(224 87 63 / 0.18); }
+  #results li[data-color='G'] { --tint: rgb(63 163 95 / 0.18); }
+  #results li[data-color='gold'] { --tint: rgb(246 198 52 / 0.21); }
+  #results li[data-color='artifact'] { --tint: rgb(152 164 174 / 0.14); }
+  #results li[data-color='land'] { --tint: rgb(138 92 58 / 0.26); }
+
+  /* Outline instead of a lighter background, so the selected row keeps its tint. */
+  #results li:hover,
+  #results li[aria-selected] {
+    background: var(--tint, transparent);
+  }
+  #results li:hover {
+    box-shadow: inset 0 0 0 1px rgb(240 239 242 / 0.2);
+  }
+  #results li[aria-selected] {
+    box-shadow: inset 0 0 0 1.5px rgb(240 239 242 / 0.45);
+  }
 }
 
 .name {
