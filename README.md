@@ -98,7 +98,7 @@ npm run eval       # where everyday queries land with the current data
 
 ## Deployment
 
-`.github/workflows/build.yml` runs on every push, on pull requests, nightly,
+`.github/workflows/build.yml` runs on every push, on pull requests, weekly (Thursdays 22:41 UTC),
 and on demand. It tests, fetches fresh data and builds the app. On the default
 branch it then publishes the app in two ways:
 
@@ -127,7 +127,7 @@ Things to know:
 - GHCR packages are created private. Make the package public, or give the
   machine pulling the image credentials for ghcr.io.
 - GitHub disables scheduled workflows in public repos after 60 days without
-  repository activity. If the nightly refresh stops, re-enable it from the
+  repository activity. If the weekly refresh stops, re-enable it from the
   Actions tab.
 - nginx's official image has no brotli module, so it serves gzip. A CDN or
   proxy in front can re-compress with brotli.
