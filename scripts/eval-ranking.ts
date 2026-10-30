@@ -1,6 +1,6 @@
 // Runs the queries in eval-queries.json against the current data file and
 // reports where each expected card lands. A tuning aid for scripts/ranking.ts,
-// not a test: the data changes nightly.
+// not a test: the data changes with every refresh.
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
